@@ -3,7 +3,6 @@
 # List of pip paths (add your own paths here)
 pip_paths=(
   "$HOME/.pyenv/versions/3.12.8/bin/pip"
-  "$HOME/.pyenv/versions/3.13.1/bin/pip"
   "$HOME/.pyenv/versions/3.13.1_gil/bin/pip"
 )
 
@@ -11,6 +10,7 @@ pip_paths=(
 packages=(
   "numpy"
   "chess"
+  "nuitka"
 )
 
 # Install packages for each Python version
