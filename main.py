@@ -3,34 +3,32 @@ import chess
 import argparse
 from movegeneration import next_move
 
+parser = argparse.ArgumentParser()
 
-def get_depth() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--depth", default=5, help="provide an integer (default: 3)")
+
+def get_depth(args) -> int:
     args = parser.parse_args()
     return max([1, int(args.depth)])
 
 
-def get_time_limit():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--time", default=3, help="provide an integer (default: 3s)")
-    args = parser.parse_args()
+def get_time_limit(args):
     return max([1, int(args.time)])
 
 
-def get_name() -> str:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--name", default="pypy", help="provide a name (default: default)")
-    args = parser.parse_args()
+def get_name(args) -> str:
     return args.name
 
 
 class uci:
     def __init__(self):
+        parser.add_argument("--name", default="default", help="provide a name (default: default)")
+        parser.add_argument("--depth", default=5, help="provide an integer (default: 3)")
+        parser.add_argument("--time", default=3, help="provide an integer (default: 3s)")
+
         self.board = chess.Board()
-        self.depth = get_depth()
-        self.time_limit = get_time_limit()
-        self.name = get_name()
+        self.depth = get_depth(parser.parse_args())
+        self.time_limit = get_time_limit(parser.parse_args())
+        self.name = get_name(parser.parse_args())
 
         while True:
             msg = input()
