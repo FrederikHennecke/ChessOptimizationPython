@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List, Any
 import chess
 import time
@@ -137,7 +138,7 @@ def log_info(message: str) -> None:
     """
     Logs a message to a file.
     """
-    LOG_FILE = rf"~/PycharmProjects/ChessOptimizationPython/logs/chess_engine_log_{debug_info['engine']}.txt"  # Path to the log file
+    LOG_FILE = rf"/home/frederik/PycharmProjects/ChessOptimizationPython/logs/chess_engine_log_{debug_info['engine']}.txt"  # Path to the log file
     with open(LOG_FILE, "a") as log_file:
         log_file.write(message + "\n")
 
