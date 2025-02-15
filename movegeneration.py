@@ -1,8 +1,6 @@
-import os
 from typing import Dict, List, Any
 import chess
 import time
-import numpy as np
 from evaluate import evaluate_board, move_value, check_end_game
 
 debug_info: Dict[str, Any] = {"engine": "pypy"}
@@ -19,11 +17,11 @@ def next_move(depth: int, board: chess.Board, time_limit: float, name: str, debu
     debug_info.clear()
     debug_info["nodes"] = 0
     debug_info["engine"] = name
-    t0 = time.perf_counter_ns()
+    t0 = time.perf_counter()
 
     move = minimax_root_with_time(depth, board, time_limit, t0)
 
-    debug_info["time"] = time.perf_counter_ns() - t0
+    debug_info["time"] = time.perf_counter() - t0
     if debug:
         log_info(f"info {debug_info}")
     log_info(f"Total moves calculated: {debug_info['nodes']}")
@@ -55,7 +53,7 @@ def minimax_root_with_time(depth: int, board: chess.Board, time_limit: float, st
     moves = order_moves(board)
 
     for move in moves:
-        if time.perf_counter_ns() - start_time >= time_limit:
+        if time.perf_counter() - start_time >= time_limit:
             break
 
         board.push(move)
@@ -90,7 +88,7 @@ def minimax_with_time(
     """
     debug_info["nodes"] += 1
 
-    if time.perf_counter_ns() - start_time >= time_limit:
+    if time.perf_counter() - start_time >= time_limit:
         return 0  # Return a neutral evaluation if time runs out
 
     if board.is_checkmate():
@@ -105,7 +103,7 @@ def minimax_with_time(
     if is_maximising_player:
         max_eval = -float("inf")
         for move in moves:
-            if time.perf_counter_ns() - start_time >= time_limit:
+            if time.perf_counter() - start_time >= time_limit:
                 break
 
             board.push(move)
@@ -120,7 +118,7 @@ def minimax_with_time(
     else:
         min_eval = float("inf")
         for move in moves:
-            if time.perf_counter_ns() - start_time >= time_limit:
+            if time.perf_counter() - start_time >= time_limit:
                 break
 
             board.push(move)
