@@ -34,7 +34,7 @@ def order_moves(board: chess.Board) -> List[chess.Move]:
     is_white = board.turn == chess.WHITE
 
     moves = []
-    for move in board.legal_moves:
+    for move in board.legal_moves():
         score = move_value(board, move, endgame)
         moves.append((score, move))
 

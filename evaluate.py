@@ -1,4 +1,5 @@
-from typing import Dict
+import numpy as np
+
 import chess
 
 # Piece values indexed by piece type (1-6)
@@ -114,18 +115,18 @@ def move_value(board: chess.Board, move: chess.Move, endgame: bool) -> float:
     position_score = 0
     if from_piece:
         position_score = evaluate_piece(from_piece, move.to_square, endgame)
-        position_score -= evaluate_piece(from_piece, move.from_square, endgame)
+        position_score += evaluate_piece(from_piece, move.from_square, endgame)
 
-    capture_value = PIECE_VALUE[to_piece.piece_type] if to_piece else 0
+    capture_value = PIECE_VALUE[abs(to_piece)] if to_piece else 0
     total = capture_value + position_score
 
-    return total if board.turn else -total
+    return total * board.turn
 
 
-def evaluate_piece(piece: chess.Piece, square: int, endgame: bool) -> int:
+def evaluate_piece(piece: int, square: tuple, endgame: bool) -> int:
     """Calculate the positional score for a piece on a given square."""
-    piece_type = piece.piece_type
-    color = piece.color
+    piece_type = abs(piece)
+    color = np.sign(piece)
 
     if piece_type == chess.KING:
         if color == chess.WHITE:
@@ -138,7 +139,7 @@ def evaluate_piece(piece: chess.Piece, square: int, endgame: bool) -> int:
             return 0
         table = table_white if color == chess.WHITE else table_black
 
-    return table[square]
+    return table[8*square[0]+square[1]]
 
 
 def evaluate_board(board: chess.Board) -> int:
@@ -148,8 +149,8 @@ def evaluate_board(board: chess.Board) -> int:
 
     for square, piece in board.piece_map().items():
         piece_score = evaluate_piece(piece, square, endgame)
-        value = PIECE_VALUE[piece.piece_type]
-        total_score += piece_score + value if piece.color else -(piece_score + value)
+        value = PIECE_VALUE[abs(piece)]
+        total_score += piece_score + value if np.sign(piece) else -(piece_score + value)
 
     return total_score
 
@@ -160,7 +161,7 @@ def check_end_game(board: chess.Board) -> bool:
     minors = 0
 
     for piece in board.piece_map().values():
-        pt = piece.piece_type
+        pt = abs(piece)
         if pt == chess.QUEEN:
             queens += 1
         elif pt in {chess.BISHOP, chess.KNIGHT}:

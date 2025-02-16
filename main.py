@@ -1,13 +1,12 @@
 import sys
-import chess
 import argparse
+import chess
 from movegeneration import next_move
 
 parser = argparse.ArgumentParser()
 
 
 def get_depth(args) -> int:
-    args = parser.parse_args()
     return max([1, int(args.depth)])
 
 
@@ -46,6 +45,7 @@ class uci:
         if msg == "uci":
             print("id name NTHPDA")
             print("id author FH")
+            print("option name UCI_Variant type combo default 5check var 5check var chess")  # Add UCI_Variant option
             print("uciok")
             return
 
@@ -54,6 +54,7 @@ class uci:
             return
 
         if msg == "ucinewgame":
+            self.board.reset()
             return
 
         if msg.startswith("position"):
@@ -80,6 +81,15 @@ class uci:
         if msg[0:2] == "go":
             _move = next_move(self.depth, self.board, self.time_limit, self.name)
             print(f"bestmove {_move}")
+            return
+
+        if msg.startswith("setoption"):
+            # Handle UCI_Variant option for 5check
+            if "UCI_Variant" in msg:
+                if "5check" in msg:
+                    print("info string 5check variant selected")
+                elif "chess" in msg:
+                    print("info string Standard chess variant selected")
             return
 
 
