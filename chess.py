@@ -110,7 +110,6 @@ class Board:
 
         self.turn = WHITE if parts[1]=="w" else BLACK
 
-
     def push_uci(self, move):
         # Convert UCI move to coordinates
         from_square = (8 - int(move[1]), ord(move[0]) - ord('a'))
@@ -131,6 +130,21 @@ class Board:
         # Get the piece at the from_square
         piece = self._board[from_square[0], from_square[1]]
 
+        # Handle castling
+        if abs(piece) == KING and abs(from_square[1] - to_square[1]) == 2:
+            # Determine if it's kingside or queenside castling
+            if to_square[1] > from_square[1]:  # Kingside castling
+                rook_from = (from_square[0], 7)  # h-file
+                rook_to = (from_square[0], 5)  # f-file
+            else:  # Queenside castling
+                rook_from = (from_square[0], 0)  # a-file
+                rook_to = (from_square[0], 3)  # d-file
+
+            # Move the rook
+            rook_piece = self._board[rook_from[0], rook_from[1]]
+            self._board[rook_to[0], rook_to[1]] = rook_piece
+            self._board[rook_from[0], rook_from[1]] = 0
+
         # Get the piece at the to_square
         old_piece = self._board[to_square[0], to_square[1]]
         if old_piece != 0:
@@ -139,6 +153,9 @@ class Board:
         # Move the piece
         self._board[to_square[0], to_square[1]] = piece
         self._board[from_square[0], from_square[1]] = 0
+
+        if np.sign(old_piece) == np.sign(piece):
+            self._board[from_square[0], from_square[1]] = old_piece
 
         # Handle promotion
         if promotion:
@@ -173,13 +190,13 @@ class Board:
                                 move.from_square = (x, y)
                                 move.to_square = (x + direction, y)
                                 move.promotion = promo
-                                if self._is_move_legal(move):
+                                if self._is_move_legal(move, self.turn):
                                     yield move
                         else:
                             move = Move()
                             move.from_square = (x, y)
                             move.to_square = (x + direction, y)
-                            if self._is_move_legal(move):
+                            if self._is_move_legal(move, self.turn):
                                 yield move
 
                     # Double move from starting position
@@ -187,7 +204,7 @@ class Board:
                         move = Move()
                         move.from_square = (x, y)
                         move.to_square = (x + 2 * direction, y)
-                        if self._is_move_legal(move):
+                        if self._is_move_legal(move, self.turn):
                             yield move
 
                     # Captures
@@ -200,13 +217,13 @@ class Board:
                                         move.from_square = (x, y)
                                         move.to_square = (x + direction, y + dy)
                                         move.promotion = promo
-                                        if self._is_move_legal(move):
+                                        if self._is_move_legal(move, self.turn):
                                             yield move
                                 else:
                                     move = Move()
                                     move.from_square = (x, y)
                                     move.to_square = (x + direction, y + dy)
-                                    if self._is_move_legal(move):
+                                    if self._is_move_legal(move, self.turn):
                                         yield move
 
                 elif piece_type == KNIGHT:
@@ -219,7 +236,7 @@ class Board:
                                 move = Move()
                                 move.from_square = (x, y)
                                 move.to_square = (x2, y2)
-                                if self._is_move_legal(move):
+                                if self._is_move_legal(move, self.turn):
                                     yield move
 
                 elif piece_type in [BISHOP, ROOK, QUEEN]:
@@ -237,7 +254,7 @@ class Board:
                                 move = Move()
                                 move.from_square = (x, y)
                                 move.to_square = (x2, y2)
-                                if self._is_move_legal(move):
+                                if self._is_move_legal(move, self.turn):
                                     yield move
                             if self._board[x2, y2] != 0:
                                 break
@@ -255,10 +272,10 @@ class Board:
                                 move = Move()
                                 move.from_square = (x, y)
                                 move.to_square = (x2, y2)
-                                if self._is_move_legal(move):
+                                if self._is_move_legal(move, self.turn):
                                     yield move
 
-    def _is_move_legal(self, move):
+    def _is_move_legal(self, move, color):
         """
         Check if a move is legal (does not leave the king in check).
         """
@@ -271,14 +288,14 @@ class Board:
         king_position = None
         for x in range(8):
             for y in range(8):
-                if self._board[x, y] == KING * self.turn:
+                if self._board[x, y] == KING * color:
                     king_position = (x, y)
                     break
             if king_position:
                 break
 
         # Check if the king is in check
-        is_legal = not self.is_square_attacked(king_position, -self.turn)
+        is_legal = not self.is_square_attacked(king_position, -color)
 
         # Undo the move
         self._board[move.from_square[0], move.from_square[1]] = self._board[move.to_square[0], move.to_square[1]]
@@ -384,7 +401,7 @@ class Board:
 
         return True
 
-    def is_square_attacked(self, square, color):
+    def is_square_attacked(self, square, enemy_color):
         """
         Check if a square is attacked by any piece of the given color.
         """
@@ -392,7 +409,7 @@ class Board:
             return False
 
         # Directions for non-sliding pieces
-        pawn_directions = [(-1, -1), (-1, 1)] if color == WHITE else [(1, -1), (1, 1)]
+        pawn_directions = [(-1, -1), (-1, 1)] if enemy_color == WHITE else [(1, -1), (1, 1)]
         knight_directions = [(-2, -1), (-1, -2), (1, -2), (2, -1),
                              (2, 1), (1, 2), (-1, 2), (-2, 1)]
         king_directions = [(-1, -1), (-1, 0), (-1, 1),
@@ -403,21 +420,21 @@ class Board:
         for dx, dy in pawn_directions:
             x, y = square[0] + dx, square[1] + dy
             if 0 <= x < 8 and 0 <= y < 8:
-                if self._board[x, y] == PAWN * color:
+                if self._board[x, y] == PAWN * enemy_color:
                     return True
 
         # Check for knight attacks
         for dx, dy in knight_directions:
             x, y = square[0] + dx, square[1] + dy
             if 0 <= x < 8 and 0 <= y < 8:
-                if self._board[x, y] == KNIGHT * color:
+                if self._board[x, y] == KNIGHT * enemy_color:
                     return True
 
         # Check for king attacks
         for dx, dy in king_directions:
             x, y = square[0] + dx, square[1] + dy
             if 0 <= x < 8 and 0 <= y < 8:
-                if self._board[x, y] == KING * color:
+                if self._board[x, y] == KING * enemy_color:
                     return True
 
         # Directions for sliding pieces (bishop, rook, queen)
@@ -434,7 +451,7 @@ class Board:
                 x, y = square[0] + dx, square[1] + dy
                 while 0 <= x < 8 and 0 <= y < 8:
                     if self._board[x, y] != 0:  # Stop if we hit a piece
-                        if self._board[x, y] == piece_type * color:
+                        if self._board[x, y] == piece_type * enemy_color:
                             return True
                         break  # Stop searching in this direction
                     x += dx
@@ -482,3 +499,9 @@ if __name__ == "__main__":
     board.set_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2")
     print(board._board)
     print(board.turn)
+
+"""
+/home/frederik/repos/cutechess/build/cutechess-cli -variant 3check -engine name=Default proto=uci cmd=/home/frederik/.pyenv/versions/3.12.8/bin/python arg=/home/frederik/PycharmProjects/ChessOptimizationPython/main.py arg=--name=default -engine name=3.13 proto=uci cmd=/home/frederik/.pyenv/versions/3.13.1_gil/bin/python arg=/home/frederik/PycharmProjects/ChessOptimizationPython/main.py arg=--name=python3.13 -each tc=10+3 -concurrency 1 -games 10 -repeat -recover -ratinginterval 2 -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 -openings file=/home/frederik/PycharmProjects/ChessOptimizationPython/Openings/Balsa_Special.pgn -debug
+e2e4 e7e5 g1f3 b8c6 f1b5 g8f6 e1g1 f6e4 f1e1 e4d6 f3e5 f8e7 b5f1 c6e5 e1e5 e8g8 e5e7 d8e7 d2d3 c7c6 c2c3 f7f6 f2f3 a7a6 a2a3 b7b6 b2b3 g7g6 g2g3 h7h6 c1h6 d6e4 h6f8 e7f8 d3e4 f8a3 a1a3 d7d6 d1d6 c6c5 d6c5 b6c5 a3a6 a8a6 f1a6 c8a6 h2h3 g6g5 e4e5 f6e5 c3c4 a6c4 b3c4 g8g7 b1c3 e5e4 c3d5 e4f3 d5e3 g5g4 h3g4 g7f6 e3d5 f6e5 d5e3 e5e4 e3f1 e4d4 f1d2 d4e5 d2b3 e5d6 b3d2 d6e5 d2f3 e5d6 f3d2
+d6d5
+"""

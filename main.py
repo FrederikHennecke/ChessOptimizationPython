@@ -22,12 +22,15 @@ class uci:
     def __init__(self):
         parser.add_argument("--name", default="default", help="provide a name (default: default)")
         parser.add_argument("--depth", default=5, help="provide an integer (default: 3)")
-        parser.add_argument("--time", default=3, help="provide an integer (default: 3s)")
+        parser.add_argument("--time", default=1, help="provide an integer (default: 3s)")
 
         self.board = chess.Board()
         self.depth = get_depth(parser.parse_args())
         self.time_limit = get_time_limit(parser.parse_args())
         self.name = get_name(parser.parse_args())
+        self.check_counts = {"white": 0, "black": 0}  # Track checks for 3check and 5check
+        self.variant = "chess"  # Default variant
+        self.history = ""
 
         while True:
             msg = input()
@@ -45,7 +48,7 @@ class uci:
         if msg == "uci":
             print("id name NTHPDA")
             print("id author FH")
-            print("option name UCI_Variant type combo default 5check var 5check var chess")  # Add UCI_Variant option
+            print("option name UCI_Variant type combo default chess var chess var 3check var 5check")  # Add UCI_Variant option
             print("uciok")
             return
 
@@ -55,6 +58,7 @@ class uci:
 
         if msg == "ucinewgame":
             self.board.reset()
+            self.check_counts = {"white": 0, "black": 0}  # Reset check counts
             return
 
         if msg.startswith("position"):
@@ -63,6 +67,7 @@ class uci:
 
             # Set starting position
             if tokens[1] == "startpos":
+                self.history = ""
                 self.board.reset()
                 moves_start = 2
             elif tokens[1] == "fen":
@@ -77,18 +82,29 @@ class uci:
 
             for move in tokens[(moves_start + 1):]:
                 self.board.push_uci(move)
+                self.history += move + " "
 
         if msg[0:2] == "go":
-            _move = next_move(self.depth, self.board, self.time_limit, self.name)
-            print(f"bestmove {_move}")
+            old_board = self.board._board.copy()
+            _move = next_move(self.depth, self.board, self.time_limit, self.name, self.history)
+            self.board._board = old_board
+            if not self.board._is_move_legal(_move, self.board.turn):
+                print(f"bestmove 0000")
+            else:
+                print(f"bestmove {_move}")
             return
 
         if msg.startswith("setoption"):
-            # Handle UCI_Variant option for 5check
+            # Handle UCI_Variant option for 3check and 5check
             if "UCI_Variant" in msg:
-                if "5check" in msg:
+                if "3check" in msg:
+                    self.variant = "3check"
+                    print("info string 3check variant selected")
+                elif "5check" in msg:
+                    self.variant = "5check"
                     print("info string 5check variant selected")
                 elif "chess" in msg:
+                    self.variant = "chess"
                     print("info string Standard chess variant selected")
             return
 

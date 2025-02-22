@@ -9,7 +9,7 @@ MATE_SCORE = 1000000000
 MATE_THRESHOLD = 999000000
 
 
-def next_move(depth: int, board: chess.Board, time_limit: float, name: str, debug=True) -> chess.Move:
+def next_move(depth: int, board: chess.Board, time_limit: float, name: str, position_history: str, debug=True) -> chess.Move:
     """
     What is the next best move?
     Stops calculation if time_limit is reached.
@@ -19,7 +19,7 @@ def next_move(depth: int, board: chess.Board, time_limit: float, name: str, debu
     debug_info["engine"] = name
     t0 = time.perf_counter()
 
-    move = minimax_root_with_time(depth, board, time_limit, t0)
+    move = minimax_root_with_time(depth, board, time_limit, t0, position_history)
 
     debug_info["time"] = time.perf_counter() - t0
     if debug:
@@ -41,7 +41,7 @@ def order_moves(board: chess.Board) -> List[chess.Move]:
     return [m for _, m in sorted(moves, key=lambda x: x[0], reverse=is_white)]
 
 
-def minimax_root_with_time(depth: int, board: chess.Board, time_limit: float, start_time: float) -> chess.Move:
+def minimax_root_with_time(depth: int, board: chess.Board, time_limit: float, start_time: float, position_history: str) -> chess.Move:
     """
     What is the highest value move per our evaluation function?
     Stops calculation if time_limit is reached.
@@ -53,15 +53,18 @@ def minimax_root_with_time(depth: int, board: chess.Board, time_limit: float, st
     moves = order_moves(board)
 
     for move in moves:
+        if best_move_found is None:
+            best_move_found = move
         if time.perf_counter() - start_time >= time_limit:
             break
 
         board.push(move)
+
         if board.can_claim_draw():
             value = 0.0
         else:
             value = minimax_with_time(depth - 1, board, -float("inf"), float("inf"), not maximize, time_limit,
-                                      start_time)
+                                      start_time, position_history)
         board.pop()
 
         if maximize and value > best_value:
@@ -71,7 +74,7 @@ def minimax_root_with_time(depth: int, board: chess.Board, time_limit: float, st
             best_value = value
             best_move_found = move
 
-    return best_move_found if best_move_found else moves[0]
+    return best_move_found if best_move_found is not None  else moves[0]
 
 
 def minimax_with_time(
@@ -81,7 +84,8 @@ def minimax_with_time(
         beta: float,
         is_maximising_player: bool,
         time_limit: float,
-        start_time: float
+        start_time: float,
+        position_history: str
 ) -> float:
     """
     Core minimax logic with time constraint.
@@ -107,7 +111,12 @@ def minimax_with_time(
                 break
 
             board.push(move)
-            eval = minimax_with_time(depth - 1, board, alpha, beta, False, time_limit, start_time)
+            # Check if the new position would lead to 3-fold repetition
+            if position_history.count(str(move)) >= 2:
+                board.pop()
+                return -MATE_SCORE if is_maximising_player else MATE_SCORE
+
+            eval = minimax_with_time(depth - 1, board, alpha, beta, False, time_limit, start_time, position_history)
             board.pop()
 
             max_eval = max(max_eval, eval)
@@ -122,7 +131,7 @@ def minimax_with_time(
                 break
 
             board.push(move)
-            eval = minimax_with_time(depth - 1, board, alpha, beta, True, time_limit, start_time)
+            eval = minimax_with_time(depth - 1, board, alpha, beta, True, time_limit, start_time, position_history)
             board.pop()
 
             min_eval = min(min_eval, eval)

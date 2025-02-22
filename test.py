@@ -301,5 +301,48 @@ class TestBoard(unittest.TestCase):
         self.board.set_fen("8/8/8/8/8/8/8/4k3 w - - 0 1")  # Black king surrounded by its own pieces
         self.assertFalse(self.board.is_checkmate())
 
+    def test_legal_move(self):
+        """Test a legal move that does not leave the king in check."""
+        self.board.set_fen("8/8/8/8/8/8/8/4k3 w - - 0 1")  # Black king at e1
+        move = chess.Move()
+        move.from_square = (7, 4)  # e1
+        move.to_square = (6, 4)  # e2
+        self.assertTrue(self.board._is_move_legal(move, chess.BLACK))
+
+    def test_illegal_move_leaving_king_in_check(self):
+        """Test an illegal move that leaves the king in check."""
+        self.board.set_fen("k7/8/8/7p/8/8/8/R7 b - - 0 1")  # Black king at h1, rook at a1
+        move = chess.Move()
+        move.from_square = (3, 7)  # h1
+        move.to_square = (4, 7)  # g1
+        print(self.board._board)
+        self.assertFalse(self.board._is_move_legal(move, chess.BLACK))
+
+    def test_legal_capture(self):
+        """Test a legal capture that does not leave the king in check."""
+        self.board.set_fen("8/8/8/8/8/8/8/R7 w - - 0 1")  # White rook at a1, black king at h1
+        move = chess.Move()
+        move.from_square = (7, 0)  # a1
+        move.to_square = (7, 7)  # h1 (capture black king)
+        self.assertTrue(self.board._is_move_legal(move, chess.WHITE))
+
+    def test_illegal_move_king_into_check(self):
+        """Test an illegal move where the king moves into check."""
+        self.board.set_fen("8/8/8/8/8/8/8/4k3 w - - 0 1")  # Black king at e1
+        move = chess.Move()
+        move.from_square = (7, 4)  # e1
+        move.to_square = (7, 5)  # f1 (into check from rook at h1)
+        self.board.set_fen("8/8/8/8/8/8/8/4k2R b - - 0 1")  # Add rook at h1
+        self.assertFalse(self.board._is_move_legal(move, chess.BLACK))
+
+    def test_legal_move_with_pawn_promotion(self):
+        """Test a legal move involving pawn promotion."""
+        self.board.set_fen("8/P7/8/8/8/8/8/4k3 w - - 0 1")  # White pawn at a7, black king at e1
+        move = chess.Move()
+        move.from_square = (1, 0)  # a7
+        move.to_square = (0, 0)  # a8 (promotion)
+        move.promotion = chess.QUEEN
+        self.assertTrue(self.board._is_move_legal(move, chess.WHITE))
+
 if __name__ == "__main__":
     unittest.main()
