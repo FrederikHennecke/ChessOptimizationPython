@@ -86,7 +86,7 @@ class uci:
 
         if msg[0:2] == "go":
             old_board = self.board._board.copy()
-            _move = next_move(self.depth, self.board, self.time_limit, self.name, self.history)
+            _move = next_move(self.board, self.time_limit, self.name, self.history)
             self.board._board = old_board
             if not self.board._is_move_legal(_move, self.board.turn):
                 print(f"bestmove 0000")
