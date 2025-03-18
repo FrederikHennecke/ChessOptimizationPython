@@ -12,13 +12,12 @@ OPENINGS_FILE="$HOME/repos/ChessOptimizationPython/Openings/Balsa_Special.pgn"
 defaultEngine="Default|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=default"
 
 #$HOME/.pyenv/versions/3.12.8/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka3.12
-#$HOME/.pyenv/versions/3.13.1-gil/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka3.13
 
 engines=(
-  "3.13|$HOME/.pyenv/versions/3.13.1-gil/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.13"
+  #"3.13|$HOME/.pyenv/versions/3.13.1-gil/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.13"
   #"Nuitka12|$HOME/repos/ChessOptimizationPython/nuitka3.12/main.bin|--name=nuitka3.12"
-  #"Nuitka13|$HOME/repos/ChessOptimizationPython/nuitka3.13/main.bin|--name=nuitka3.13"
   #"Pypy|$HOME/repos/pypy3.11-v7.3.19-linux64/bin/pypy|$HOME/repos/ChessOptimizationPython/default/main.py|--name=pypy"
+  "Numba|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
 )
 
 # Function to build engine arguments
