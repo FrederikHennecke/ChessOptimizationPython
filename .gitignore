@@ -4,3 +4,4 @@ build/
 dist/
 logs/
 .idea/
+Cpp_cython/cmake-build-debug/

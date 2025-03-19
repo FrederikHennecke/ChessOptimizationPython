@@ -14,7 +14,6 @@ def next_move(
     board: chess.Board,
     time_limit: float,
     name: str,
-    position_history: str,
     debug=True
 ) -> chess.Move:
     """
@@ -32,8 +31,7 @@ def next_move(
             depth,
             board,
             t0,
-            time_limit,
-            position_history
+            time_limit
         )
         if current_move is not None:
             best_move = current_move
@@ -50,7 +48,6 @@ def minimax_root(
     board: chess.Board,
     start_time: float,
     time_limit: float,
-    position_history: str
 ) -> Optional[chess.Move]:
     """
     Iterative deepening root with node counting.
@@ -71,8 +68,7 @@ def minimax_root(
             float("inf"),
             board.turn == chess.WHITE,
             start_time,
-            time_limit,
-            position_history
+            time_limit
         )
         board.pop()
 
@@ -102,8 +98,7 @@ def minimax(
     beta: float,
     is_maximizing: bool,
     start_time: float,
-    time_limit: float,
-    position_history: str
+    time_limit: float
 ) -> float:
     """
     Updated minimax with proper node counting.
@@ -126,7 +121,7 @@ def minimax(
         max_eval = -float("inf")
         for move in moves:
             board.push(move)
-            eval = minimax(depth - 1, board, alpha, beta, False, start_time, time_limit, position_history)
+            eval = minimax(depth - 1, board, alpha, beta, False, start_time, time_limit)
             board.pop()
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
@@ -137,7 +132,7 @@ def minimax(
         min_eval = float("inf")
         for move in moves:
             board.push(move)
-            eval = minimax(depth - 1, board, alpha, beta, True, start_time, time_limit, position_history)
+            eval = minimax(depth - 1, board, alpha, beta, True, start_time, time_limit)
             board.pop()
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)

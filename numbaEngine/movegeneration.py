@@ -11,11 +11,10 @@ MATE_THRESHOLD = 999000000
 
 
 def next_move(
-    board: chess.Board,
-    time_limit: float,
-    name: str,
-    position_history: str,
-    debug=True
+        board: chess.Board,
+        time_limit: float,
+        name: str,
+        debug=True
 ) -> chess.Move:
     """
     Uses iterative deepening to search deeper until time runs out.
@@ -32,8 +31,7 @@ def next_move(
             depth,
             board,
             t0,
-            time_limit,
-            position_history
+            time_limit
         )
         if current_move is not None:
             best_move = current_move
@@ -45,12 +43,12 @@ def next_move(
         log_info(f"Final stats: {debug_info}")
     return best_move if best_move else random.choice(list(board.legal_moves()))
 
+
 def minimax_root(
-    max_depth: int,
-    board: chess.Board,
-    start_time: float,
-    time_limit: float,
-    position_history: str
+        max_depth: int,
+        board: chess.Board,
+        start_time: float,
+        time_limit: float,
 ) -> Optional[chess.Move]:
     """
     Iterative deepening root with node counting.
@@ -71,17 +69,17 @@ def minimax_root(
             float("inf"),
             board.turn == chess.WHITE,
             start_time,
-            time_limit,
-            position_history
+            time_limit
         )
         board.pop()
 
         if (board.turn == chess.WHITE and value > best_value) or \
-           (board.turn == chess.BLACK and value < best_value):
+                (board.turn == chess.BLACK and value < best_value):
             best_value = value
             best_move = move
 
     return best_move
+
 
 def order_moves(board: chess.Board) -> List[chess.Move]:
     """Generate legal moves sorted by heuristic value."""
@@ -95,15 +93,15 @@ def order_moves(board: chess.Board) -> List[chess.Move]:
 
     return [m for _, m in sorted(moves, key=lambda x: x[0], reverse=is_white)]
 
+
 def minimax(
-    depth: int,
-    board: chess.Board,
-    alpha: float,
-    beta: float,
-    is_maximizing: bool,
-    start_time: float,
-    time_limit: float,
-    position_history: str
+        depth: int,
+        board: chess.Board,
+        alpha: float,
+        beta: float,
+        is_maximizing: bool,
+        start_time: float,
+        time_limit: float,
 ) -> float:
     """
     Updated minimax with proper node counting.
@@ -126,7 +124,7 @@ def minimax(
         max_eval = -float("inf")
         for move in moves:
             board.push(move)
-            eval = minimax(depth - 1, board, alpha, beta, False, start_time, time_limit, position_history)
+            eval = minimax(depth - 1, board, alpha, beta, False, start_time, time_limit)
             board.pop()
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
@@ -137,7 +135,7 @@ def minimax(
         min_eval = float("inf")
         for move in moves:
             board.push(move)
-            eval = minimax(depth - 1, board, alpha, beta, True, start_time, time_limit, position_history)
+            eval = minimax(depth - 1, board, alpha, beta, True, start_time, time_limit)
             board.pop()
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)

@@ -24,7 +24,6 @@ class uci:
         self.name = get_name(parser.parse_args())
         self.check_counts = {"white": 0, "black": 0}  # Track checks for 3check and 5check
         self.variant = "chess"  # default variant
-        self.history = ""
 
         while True:
             msg = input()
@@ -61,7 +60,6 @@ class uci:
 
             # Set starting position
             if tokens[1] == "startpos":
-                self.history = ""
                 self.board.reset()
                 moves_start = 2
             elif tokens[1] == "fen":
@@ -76,11 +74,10 @@ class uci:
 
             for move in tokens[(moves_start + 1):]:
                 self.board.push_uci(move)
-                self.history += move + " "
 
         if msg[0:2] == "go":
             old_board = self.board._board.copy()
-            _move = next_move(self.board, self.time_limit, self.name, self.history)
+            _move = next_move(self.board, self.time_limit, self.name)
             self.board._board = old_board
             if not self.board._is_move_legal(_move, self.board.turn):
                 print(f"bestmove 0000")
