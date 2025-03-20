@@ -2,22 +2,7 @@
 // Created by Frederik on 19.03.2025.
 //
 
-#include "evaluation.h"
-
-#include <iostream>
-#include <vector>
-#include <map>
-#include <cmath>
-
-// Constants for piece types and colors
-const int WHITE = 1;
-const int BLACK = -1;
-const int PAWN = 1;
-const int KNIGHT = 2;
-const int BISHOP = 3;
-const int ROOK = 4;
-const int QUEEN = 5;
-const int KING = 6;
+#include "evaluation.hpp"
 
 // Piece values indexed by piece type (1-6)
 const std::vector<int> PIECE_VALUE = {0, 100, 320, 330, 500, 900, 20000};
@@ -196,22 +181,33 @@ int evaluate_board(const std::vector<std::vector<int>>& board, bool endgame) {
     return total_score;
 }
 
-// Function to check if the game is in an endgame state
-bool check_end_game(const std::vector<std::vector<int>>& board) {
-    int queens = 0;
-    int minors = 0;
-
-    for (int x = 0; x < 8; ++x) {
-        for (int y = 0; y < 8; ++y) {
-            int piece = abs(board[x][y]);
-            if (piece == QUEEN) {
-                queens++;
-            } else if (piece == BISHOP || piece == KNIGHT) {
-                minors++;
-            }
-        }
+int move_value(const Board& board, const Move& move, bool endgame) {
+    // Handle promotion case
+    if (move.promotion != 0) {
+        return PIECE_VALUE.at(QUEEN) * static_cast<int>(board.turn);
     }
 
-    return queens == 0 || (queens == 2 && minors <= 1);
+    // Get pieces at from and to squares
+    auto _board = board._board;
+    int from_piece = _board.at(move.from_square.first).at(move.from_square.second);
+    int to_piece = _board.at(move.to_square.first).at(move.to_square.second);
+
+    int position_score = 0;
+    if (from_piece != 0) {  // Valid moving piece exists
+        // Calculate positional score difference
+        position_score = evaluate_piece(from_piece, move.to_square, endgame)
+                       - evaluate_piece(from_piece, move.from_square, endgame);
+    }
+
+    // Calculate capture value
+    int capture_value = 0;
+    if (to_piece != 0) {
+        int captured_type = std::abs(to_piece);
+        capture_value = PIECE_VALUE.at(captured_type);
+    }
+
+    // Calculate total value with turn multiplier
+    return (capture_value + position_score) * static_cast<int>(board.turn);
 }
+
 

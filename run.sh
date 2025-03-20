@@ -11,13 +11,21 @@ OPENINGS_FILE="$HOME/repos/ChessOptimizationPython/Openings/Balsa_Special.pgn"
 # Define your engines (name, python_executable, script_path, args...)
 defaultEngine="Default|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=default"
 
+# set up Nuitka
 #$HOME/.pyenv/versions/3.12.8/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka3.12
+
+# setup Cython
+cd Cpp_cython || exit
+python setup.py build_ext --force
+cp build/lib.linux-x86_64-cpython-312/chess_engine.cpython-312-x86_64-linux-gnu.so chess_engine.so
+cd ..
 
 engines=(
   #"3.13|$HOME/.pyenv/versions/3.13.1-gil/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.13"
   #"Nuitka12|$HOME/repos/ChessOptimizationPython/nuitka3.12/main.bin|--name=nuitka3.12"
   #"Pypy|$HOME/repos/pypy3.11-v7.3.19-linux64/bin/pypy|$HOME/repos/ChessOptimizationPython/default/main.py|--name=pypy"
-  "Numba|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
+  #"Numba|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
+  "Cython|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/Cpp_cython/main.py|--name=cython"
 )
 
 # Function to build engine arguments

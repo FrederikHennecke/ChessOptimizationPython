@@ -2,16 +2,7 @@
 // Created by Frederik on 19.03.2025.
 //
 
-#include "movegeneration.h"
-
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <fstream>
-#include <sstream>
-#include "chess.h"
+#include "movegeneration.hpp"
 
 // Constants and types
 constexpr float MATE_SCORE = 1e9f;
@@ -53,9 +44,9 @@ struct DebugInfo {
 
     if (debug) {
         std::stringstream ss;
-        ss << "Final stats: {engine: " << debug_info.engine
-           << ", nodes: " << debug_info.nodes
-           << ", time: " << debug_info.time << "}";
+        ss << "Final stats: {'nodes': " << debug_info.nodes
+           << ", 'engine': '" << debug_info.engine
+           << "', 'time': " << debug_info.time << "}";
         log_info(ss.str());
     }
     best_move.from_square.first != -1 ? best_move :
@@ -65,11 +56,14 @@ struct DebugInfo {
 }
 
 // Minimax root with iterative deepening
-Move minimax_root(int max_depth, Board& board, const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time,
+Move minimax_root(int max_depth, Board board, const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time,
                   double time_limit) {
     bool is_maximizing = board.turn == WHITE;
     float best_value = is_maximizing ? -INFINITY : INFINITY;
     Move best_move;
+    best_move.from_square = {-1, -1};
+    best_move.to_square = {1, 1};
+    best_move.promotion = 0;
 
     for (Move move : order_moves(board)) {
         if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count() >= time_limit)
@@ -80,7 +74,8 @@ Move minimax_root(int max_depth, Board& board, const std::chrono::time_point<std
                               start_time, time_limit);
         board.pop();
 
-        if ((is_maximizing && value > best_value) || (!is_maximizing && value < best_value)) {
+        if((board.turn == WHITE && value > best_value) ||
+           (board.turn == BLACK && value < best_value)){
             best_value = value;
             best_move = move;
         }
@@ -109,15 +104,20 @@ std::vector<Move> order_moves(Board& board) {
 }
 
 // Core minimax algorithm with alpha-beta pruning
-float minimax(int depth, Board& board, float alpha, float beta, bool is_maximizing,
+float minimax(int depth, Board board, float alpha, float beta, bool is_maximizing,
               const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time, double time_limit) {
     debug_info.nodes++;
 
     if (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count() >= time_limit)
         return 0.0f;
 
-    if (board.is_checkmate()) return is_maximizing ? -MATE_SCORE : MATE_SCORE;
-    if (depth == 0) return evaluate_board(board);
+    if (board.is_checkmate()) {
+        float penalty = float(depth) * 1000.0f;
+        return is_maximizing ?
+            (-MATE_SCORE + penalty) :
+            (MATE_SCORE - penalty);
+    }
+    if (depth == 0) return evaluate_board(board._board, false);
 
     float value = is_maximizing ? -INFINITY : INFINITY;
     for (Move move : order_moves(board)) {
@@ -138,9 +138,27 @@ float minimax(int depth, Board& board, float alpha, float beta, bool is_maximizi
     return value;
 }
 
+// Function to check if the game is in an endgame state
+bool check_end_game(const Board& board) {
+    int queens = 0;
+    int minors = 0;
+
+    for (int x = 0; x < 8; ++x) {
+        for (int y = 0; y < 8; ++y) {
+            int piece = abs(board._board.at(x).at(y));
+            if (piece == QUEEN) {
+                queens++;
+            } else if (piece == BISHOP || piece == KNIGHT) {
+                minors++;
+            }
+        }
+    }
+
+    return queens == 0 || (queens == 2 && minors <= 1);
+}
+
 // Logging implementation
 void log_info(const std::string& message) {
-    std::ofstream log_file("/home/frederik/repos/ChessOptimizationPython/logs/chess_engine_log_" +
-                      debug_info.engine + ".txt", std::ios::app);
+    std::ofstream log_file("/home/frederik/repos/ChessOptimizationPython/logs/chess_engine_log_cython.txt", std::ios::app);
     if (log_file) log_file << message << std::endl;
 }

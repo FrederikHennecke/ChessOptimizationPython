@@ -2,14 +2,13 @@
 // Created by Frederik on 19.03.2025.
 //
 
-#include "chess.h"
+#include "chess.hpp"
 
 #include <vector>
 #include <stack>
 #include <map>
 #include <string>
 #include <stdexcept>
-#include <algorithm>
 #include <utility>
 
 bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
@@ -23,7 +22,7 @@ bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
     for (auto &delta: pawn_deltas) {
         int x = square.first + delta.first;
         int y = square.second + delta.second;
-        if (x >= 0 && x < 8 && y >= 0 && y < 8 && board[x][y] == PAWN * enemy_color)
+        if (x >= 0 && x < 8 && y >= 0 && y < 8 && _board[x][y] == PAWN * enemy_color)
             return true;
     }
 
@@ -39,7 +38,7 @@ bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
     for (auto &delta: knight_deltas) {
         int x = square.first + delta.first;
         int y = square.second + delta.second;
-        if (x >= 0 && x < 8 && y >= 0 && y < 8 && board[x][y] == KNIGHT * enemy_color)
+        if (x >= 0 && x < 8 && y >= 0 && y < 8 && _board[x][y] == KNIGHT * enemy_color)
             return true;
     }
 
@@ -55,7 +54,7 @@ bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
     for (auto &delta: king_deltas) {
         int x = square.first + delta.first;
         int y = square.second + delta.second;
-        if (x >= 0 && x < 8 && y >= 0 && y < 8 && board[x][y] == KING * enemy_color)
+        if (x >= 0 && x < 8 && y >= 0 && y < 8 && _board[x][y] == KING * enemy_color)
             return true;
     }
 
@@ -72,8 +71,8 @@ bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
         int x = square.first + dir.first;
         int y = square.second + dir.second;
         while (x >= 0 && x < 8 && y >= 0 && y < 8) {
-            if (board[x][y] != 0) {
-                int piece = board[x][y];
+            if (_board[x][y] != 0) {
+                int piece = _board[x][y];
                 if ((dir.first == 0 || dir.second == 0) &&
                     (abs(piece) == ROOK || abs(piece) == QUEEN) && piece * enemy_color > 0)
                     return true;
@@ -92,23 +91,23 @@ bool Board::is_square_attacked(std::pair<int, int> square, int enemy_color) {
 void Board::retractMove(const Move &move) {
     auto &from = move.from_square;
     auto &to = move.to_square;
-    int piece = board[to.first][to.second];
-    board[from.first][from.second] = piece;
-    board[to.first][to.second] = 0;
+    int piece = _board[to.first][to.second];
+    _board.at(from.first).at(from.second) = piece;
+    _board.at(to.first).at(to.second) = 0;
 
     // Undo castling
     if (abs(piece) == KING && abs(from.second - to.second) == 2) {
         int rook_from_col = (to.second > from.second) ? 5 : 3;
         int rook_to_col = (to.second > from.second) ? 7 : 0;
         int row = from.first;
-        int rook = board[row][rook_from_col];
-        board[row][rook_to_col] = rook;
-        board[row][rook_from_col] = 0;
+        int rook = _board.at(row).at(rook_from_col);
+        _board.at(row).at(rook_to_col) = rook;
+        _board.at(row).at(rook_from_col) = 0;
     }
 
     // Undo promotion
     if (move.promotion)
-        board[from.first][from.second] = PAWN * turn;
+        _board.at(from.first).at(from.second) = PAWN * -turn;
 
     turn = -turn;
 }
@@ -126,9 +125,14 @@ void Board::reset() {
             {1,  1,  1,  1,  1,  1,  1,  1},
             {4,  2,  3,  5,  6,  3,  2,  4}
     };
-    for (int i = 0; i < 8; ++i)
-        for (int j = 0; j < 8; ++j)
-            board[i][j] = initial[i][j];
+    _board = std::vector(8, std::vector(8, 0));
+    for (int i = 0; i < 8; ++i){
+    _board.at(i) = std::vector(initial[i], initial[i] + 8);
+        for (int j=0;j<8;j++) {
+            _board.at(i).at(j) = initial[i][j];
+        }
+
+    }
     turn = WHITE;
     while (!event_stack.empty()) event_stack.pop();
 }
@@ -149,7 +153,7 @@ void Board::reset() {
             {'k', {BLACK, KING}}
     };
 
-    for (auto &row: board)
+    for (auto &row: _board)
         row = std::vector<int>(8, 0);
 
     size_t space = fen.find(' ');
@@ -165,7 +169,7 @@ void Board::reset() {
         else if (isdigit(c)) col += c - '0';
         else {
             auto &p = piece_map[c];
-            board[row][col] = p.first == WHITE ? p.second : -p.second;
+            _board.at(row).at(col) = p.first == WHITE ? p.second : -p.second;
             col++;
         }
     }
@@ -183,23 +187,24 @@ void Board::push_uci(const std::string &move_str) {
                                                 promo == 'b' ? BISHOP : KNIGHT;
     }
 
-    int &piece = board[move.from_square.first][move.from_square.second];
-    int &target = board[move.to_square.first][move.to_square.second];
+    int &piece = _board.at(move.from_square.first).at(move.from_square.second);
+    int &target = _board.at(move.to_square.first).at(move.to_square.second);
 
     // Handle castling
     if (abs(piece) == KING && abs(move.from_square.second - move.to_square.second) == 2) {
         int rook_from_col = move.to_square.second > move.from_square.second ? 7 : 0;
         int rook_to_col = move.to_square.second > move.from_square.second ? 5 : 3;
-        std::pair<int, int> rook_from = {move.from_square.first, rook_from_col};
-        std::pair<int, int> rook_to = {move.from_square.first, rook_to_col};
-        int rook = board[rook_from.first][rook_from.second];
-        board[rook_to.first][rook_to.second] = rook;
-        board[rook_from.first][rook_from.second] = 0;
+        std::pair rook_from = {move.from_square.first, rook_from_col};
+        std::pair rook_to = {move.from_square.first, rook_to_col};
+        int rook = _board.at(rook_from.first).at(rook_from.second);
+        _board.at(rook_to.first).at(rook_to.second) = rook;
+        _board.at(rook_from.first).at(rook_from.second) = 0;
     }
 
+    event_stack.emplace(move);
     if (target != 0)
-        event_stack.push(target);
-    event_stack.push(move);
+        event_stack.emplace(target);
+
 
     target = piece;
     piece = 0;
@@ -212,23 +217,23 @@ void Board::push_uci(const std::string &move_str) {
 
 bool Board::is_move_legal(const Move& move, int color) {
     // Save original state
-    int original_from = board[move.from_square.first][move.from_square.second];
-    int original_to = board[move.to_square.first][move.to_square.second];
+    int original_from = _board.at(move.from_square.first).at(move.from_square.second);
+    int original_to = _board.at(move.to_square.first).at(move.to_square.second);
 
     // Simulate move
-    board[move.to_square.first][move.to_square.second] = original_from;
-    board[move.from_square.first][move.from_square.second] = 0;
+    _board.at(move.to_square.first).at(move.to_square.second) = original_from;
+    _board.at(move.from_square.first).at(move.from_square.second) = 0;
 
     // Handle promotion
     if (move.promotion)
-        board[move.to_square.first][move.to_square.second] = move.promotion * color;
+        _board[move.to_square.first][move.to_square.second] = move.promotion * color;
 
     // Find king's position
     std::pair<int, int> king_pos;
     bool found = false;
     for (int i = 0; i < 8 && !found; ++i) {
         for (int j = 0; j < 8; ++j) {
-            if (board[i][j] == KING * color) {
+            if (_board[i][j] == KING * color) {
                 king_pos = {i, j};
                 found = true;
                 break;
@@ -240,14 +245,14 @@ bool Board::is_move_legal(const Move& move, int color) {
     bool safe = !is_square_attacked(king_pos, -color);
 
     // Restore board
-    board[move.from_square.first][move.from_square.second] = original_from;
-    board[move.to_square.first][move.to_square.second] = original_to;
+    _board[move.from_square.first][move.from_square.second] = original_from;
+    _board[move.to_square.first][move.to_square.second] = original_to;
 
     return safe;
 }
 
 void Board::push(const Move &move) {
-    event_stack.push(move);
+    event_stack.emplace(move);
     push_uci(move.uci());
 }
 
@@ -256,7 +261,7 @@ std::vector<Move> Board::legal_moves() {
 
     for (int x = 0; x < 8; ++x) {
         for (int y = 0; y < 8; ++y) {
-            int piece = board[x][y];
+            int piece = _board[x][y];
             if (piece == 0 || piece * turn <= 0) continue; // Skip empty or opponent's pieces
 
             int piece_type = abs(piece);
@@ -269,7 +274,7 @@ std::vector<Move> Board::legal_moves() {
 
                 // Single move forward
                 int new_x = x + direction;
-                if (new_x >= 0 && new_x < 8 && board[new_x][y] == 0) {
+                if (new_x >= 0 && new_x < 8 && _board[new_x][y] == 0) {
                     if (new_x == promotion_row) {
                         for (int promo : {QUEEN, ROOK, BISHOP, KNIGHT}) {
                             Move move;
@@ -292,7 +297,7 @@ std::vector<Move> Board::legal_moves() {
                 if (x == start_row) {
                     int new_x2 = x + 2 * direction;
                     if (new_x2 >= 0 && new_x2 < 8 &&
-                        board[x + direction][y] == 0 && board[new_x2][y] == 0) {
+                        _board[x + direction][y] == 0 && _board[new_x2][y] == 0) {
                         Move move;
                         move.from_square = {x, y};
                         move.to_square = {new_x2, y};
@@ -306,7 +311,7 @@ std::vector<Move> Board::legal_moves() {
                     int new_x = x + direction;
                     int new_y = y + dy;
                     if (new_x >= 0 && new_x < 8 && new_y >= 0 && new_y < 8) {
-                        if (board[new_x][new_y] * turn < 0) { // Enemy piece
+                        if (_board[new_x][new_y] * turn < 0) { // Enemy piece
                             if (new_x == promotion_row) {
                                 for (int promo : {QUEEN, ROOK, BISHOP, KNIGHT}) {
                                     Move move;
@@ -338,7 +343,7 @@ std::vector<Move> Board::legal_moves() {
                     int x2 = x + delta.first;
                     int y2 = y + delta.second;
                     if (x2 >= 0 && x2 < 8 && y2 >= 0 && y2 < 8) {
-                        if (board[x2][y2] * turn <= 0) { // Empty or enemy
+                        if (_board[x2][y2] * turn <= 0) { // Empty or enemy
                             Move move;
                             move.from_square = {x, y};
                             move.to_square = {x2, y2};
@@ -361,14 +366,14 @@ std::vector<Move> Board::legal_moves() {
                     int x2 = x + dir.first;
                     int y2 = y + dir.second;
                     while (x2 >= 0 && x2 < 8 && y2 >= 0 && y2 < 8) {
-                        if (board[x2][y2] * turn <= 0) { // Empty or enemy
+                        if (_board[x2][y2] * turn <= 0) { // Empty or enemy
                             Move move;
                             move.from_square = {x, y};
                             move.to_square = {x2, y2};
                             if (is_move_legal(move, turn))
                                 moves.push_back(move);
                         }
-                        if (board[x2][y2] != 0) break; // Blocked
+                        if (_board[x2][y2] != 0) break; // Blocked
                         x2 += dir.first;
                         y2 += dir.second;
                     }
@@ -386,7 +391,7 @@ std::vector<Move> Board::legal_moves() {
                     int x2 = x + delta.first;
                     int y2 = y + delta.second;
                     if (x2 >= 0 && x2 < 8 && y2 >= 0 && y2 < 8) {
-                        if (board[x2][y2] * turn <= 0) { // Empty or enemy
+                        if (_board[x2][y2] * turn <= 0) { // Empty or enemy
                             Move move;
                             move.from_square = {x, y};
                             move.to_square = {x2, y2};
@@ -404,23 +409,28 @@ std::vector<Move> Board::legal_moves() {
 
 void Board::pop() {
     if (event_stack.empty()) throw std::runtime_error("No moves to pop");
+
     auto top = event_stack.top();
     event_stack.pop();
 
-    if (holds_alternative<int>(top)) {
-        int captured = get<int>(top);
-        Move move = get<Move>(event_stack.top());
+    if (std::holds_alternative<int>(top)) {
+        // Handle capture: [Move, CapturedPiece] in stack
+        int captured = std::get<int>(top);
+        Move move = std::get<Move>(event_stack.top());
         event_stack.pop();
-        retractMove(move);
-        board[move.to_square.first][move.to_square.second] = captured;
+
+        this->retractMove(move);
+        _board[move.to_square.first][move.to_square.second] = captured;
     } else {
-        retractMove(get<Move>(top));
+        // Handle non-capture
+        Move move = std::get<Move>(top);
+        this->retractMove(move);
     }
 }
 
 bool Board::can_claim_draw() {
     int pawns = 0, queens = 0, rooks = 0, bishops = 0, knights = 0;
-    for (auto &row: board) {
+    for (auto &row: _board) {
         for (int p: row) {
             int abs_p = abs(p);
             if (abs_p == PAWN) pawns++;
@@ -439,7 +449,7 @@ bool Board::is_checkmate() {
     bool found = false;
     for (int i = 0; i < 8 && !found; ++i)
         for (int j = 0; j < 8; ++j)
-            if (board[i][j] == KING * turn) {
+            if (_board[i][j] == KING * turn) {
                 king_pos = {i, j};
                 found = true;
                 break;

@@ -53,9 +53,9 @@ struct Move {
 // Board class to represent the chess board
 class Board {
 private:
-    std::vector<std::vector<int>> board;
     std::stack<std::variant<Move, int>> event_stack;
 public:
+    std::vector<std::vector<int>> _board;
     Board();
 
     void reset();

@@ -1,6 +1,7 @@
 import sys
 import argparse
-from chess_engine import Board, Move, next_move  # Cython module
+
+from chess_engine import Board, next_move, Move, debug_cpp_board
 
 parser = argparse.ArgumentParser()
 
@@ -69,14 +70,27 @@ class uci:
                     self.board.push_uci(move)
 
         if msg.startswith("go"):
-            _move = next_move(self.board, self.time_limit, self.name, "")
-            print(f"bestmove {_move.uci()}")
+            _move_uci = next_move(self.board, self.time_limit, self.name, True)
+
+            if not self.board.is_move_legal(_move_uci):
+                print(f"bestmove 0000")
+            else:
+                print(f"bestmove {_move_uci.uci()}")
             return
 
         if msg.startswith("setoption"):
+            # Handle UCI_Variant option for 3check and 5check
             if "UCI_Variant" in msg:
-                # Handle variant logic in Python
-                pass
+                if "3check" in msg:
+                    self.variant = "3check"
+                    print("info string 3check variant selected")
+                elif "5check" in msg:
+                    self.variant = "5check"
+                    print("info string 5check variant selected")
+                elif "chess" in msg:
+                    self.variant = "chess"
+                    print("info string Standard chess variant selected")
+            return
 
 if __name__ == "__main__":
     uci()

@@ -4,9 +4,10 @@ project(Cython)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(Cython
+        chess.hpp
         chess.cpp
-        chess.h
+        evaluation.hpp
         evaluation.cpp
-        evaluation.h
+        movegeneration.hpp
         movegeneration.cpp
-        movegeneration.h)
+        test.cpp)

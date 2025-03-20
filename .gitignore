@@ -5,3 +5,6 @@ dist/
 logs/
 .idea/
 Cpp_cython/cmake-build-debug/
+Cpp_cython/build/
+Cpp_cython/chess_engine.cpp/
+*.so
