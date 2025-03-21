@@ -4,15 +4,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def decode_bytes(data):
+    return {k.decode('utf-8') if isinstance(k, bytes) else k:
+                v.decode('utf-8') if isinstance(v, bytes) else v
+            for k, v in data.items()}
+
+
 def read_log_files(folder_path):
     data = {}
 
     for filename in os.listdir(folder_path):
         if filename.endswith(".txt"):  # Adjust the extension if needed
-            with open(os.path.join(folder_path, filename), "r") as file:
+            with open(os.path.join(folder_path, filename), "rb") as file:  # Open in binary mode
                 for line in file:
-                    if line.startswith("Final stats:"):
-                        stats = ast.literal_eval(line[len("Final stats: "):].strip())
+                    if line.startswith(b"Final stats:"):  # Note the byte prefix
+                        # Decode line and remove 'Final stats: '
+                        line_str = line[len(b"Final stats: "):].strip()
+
+                        # Evaluate the dictionary safely
+                        try:
+                            stats = ast.literal_eval(line_str.decode('utf-8'))
+                            stats = decode_bytes(stats)  # Decode byte strings in the dictionary
+                        except Exception as e:
+                            print(f"Error processing line: {e}")
+                            continue  # Skip lines that can't be processed
+
                         engine = stats["engine"]
                         nodes = stats["nodes"]
                         time = stats["time"]
