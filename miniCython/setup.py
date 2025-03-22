@@ -1,6 +1,4 @@
-from distutils.extension import Extension
-
-from setuptools import setup
+from setuptools import setup, Extension
 from Cython.Build import cythonize
 import numpy as np
 

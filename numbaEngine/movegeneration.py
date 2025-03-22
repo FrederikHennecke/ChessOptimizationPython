@@ -4,7 +4,7 @@ import time
 from evaluate import evaluate_board, move_value, check_end_game
 import random
 
-debug_info: Dict[str, Any] = {"engine": "pypy"}
+debug_info: Dict[str, Any] = {"engine": "numba"}
 
 MATE_SCORE = 1000000000
 MATE_THRESHOLD = 999000000

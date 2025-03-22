@@ -1,5 +1,7 @@
 import os
 import ast
+
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -54,6 +56,8 @@ def plot_data(data):
     ax1.set_xlabel("Engine")
     ax1.set_ylabel("Avg Nodes Processed", color='b')
 
+    ax1.set_yscale('log')
+
     ax1.set_title("Engine Performance Comparison")
 
     fig.legend(loc='upper right')
@@ -61,6 +65,9 @@ def plot_data(data):
 
 
 if __name__ == "__main__":
+    FONT_SIZE = 16
+    matplotlib.rcParams.update({'font.size': FONT_SIZE})
+
     folder_path = "./logs"  # Change this to your actual log directory
     data = read_log_files(folder_path)
     if data:

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-pyenv install 3.10.4
+pyenv install 3.10.8
 pyenv install 3.12.8
 
 # List of pip paths (add your own paths here)
 pip_paths=(
-  "$HOME/.pyenv/versions/3.10.4/bin/pip"
+  "$HOME/.pyenv/versions/3.10.8/bin/pip"
   "$HOME/.pyenv/versions/3.12.8/bin/pip"
 )
 

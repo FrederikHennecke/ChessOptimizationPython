@@ -4,35 +4,35 @@ cd $HOME/repos/ChessOptimizationPython/ || return
 
 # Configuration
 CONCURRENCY=16
-GAMES_PER_MATCH=20
+GAMES_PER_MATCH=1
 TIME_CONTROL="10+3"
 OPENINGS_FILE="$HOME/repos/ChessOptimizationPython/Openings/Balsa_Special.pgn"
 
 # Define your engines (name, python_executable, script_path, args...)
-defaultEngine="Default|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=default"
+defaultEngine="Default|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=default"
 
 # set up Nuitka
-#$HOME/.pyenv/versions/3.12.8/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka3.12
+#$HOME/.pyenv/versions/3.10.4/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka
 
 # setup Cython
-#cd Cpp_cython || exit
-#python setup.py build_ext --force
-#cp build/lib.linux-x86_64-cpython-312/*.so ./
-#cd ..
+cd Cpp_cython || exit
+$HOME/.pyenv/versions/3.10.4/bin/python setup.py build_ext --force
+cp build/lib.linux-x86_64-3.10/*.so ./
+cd ..
 
 # setup Cython
 cd miniCython || exit
-#$HOME/repos/pythonnogil/.venv/bin/python setup.py build_ext --force
-cp build/lib.linux-x86_64-cpython-312/*.so ./
+$HOME/.pyenv/versions/3.10.4/bin/python setup.py build_ext --force
+cp build/lib.linux-x86_64-3.10/*.so ./
 cd ..
 
 engines=(
-  #"3.13|$HOME/.pyenv/versions/3.13.1-gil/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.13"
-  #"Nuitka12|$HOME/repos/ChessOptimizationPython/nuitka3.12/main.bin|--name=nuitka3.12"
+  #"3.12|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.12"
+  #"Nuitka|$HOME/repos/ChessOptimizationPython/nuitka/main.bin|--name=nuitka"
   #"Pypy|$HOME/repos/pypy3.11-v7.3.19-linux64/bin/pypy|$HOME/repos/ChessOptimizationPython/default/main.py|--name=pypy"
-  #"Numba|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
-  #"Cython|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/Cpp_cython/main.py|--name=cython"
-  "Cython2|$HOME/repos/pythonnogil/.venv/bin/python|$HOME/repos/ChessOptimizationPython/miniCython/main.py|--name=cython2"
+  #"Numba|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
+  "Cpp|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/Cpp_cython/main.py|--name=cpp"
+  "Cython|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/miniCython/main.py|--name=cython"
 )
 
 # Function to build engine arguments

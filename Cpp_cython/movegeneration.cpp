@@ -159,6 +159,6 @@ bool check_end_game(const Board& board) {
 
 // Logging implementation
 void log_info(const std::string& message) {
-    std::ofstream log_file("/home/frederik/repos/ChessOptimizationPython/logs/chess_engine_log_cython.txt", std::ios::app);
+    std::ofstream log_file("/home/frederik/repos/ChessOptimizationPython/logs/chess_engine_log_cpp.txt", std::ios::app);
     if (log_file) log_file << message << std::endl;
 }
