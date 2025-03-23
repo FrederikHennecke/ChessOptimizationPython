@@ -4,7 +4,7 @@ cd $HOME/repos/ChessOptimizationPython/ || return
 
 # Configuration
 CONCURRENCY=16
-GAMES_PER_MATCH=1
+GAMES_PER_MATCH=100
 TIME_CONTROL="10+3"
 OPENINGS_FILE="$HOME/repos/ChessOptimizationPython/Openings/Balsa_Special.pgn"
 
@@ -12,7 +12,7 @@ OPENINGS_FILE="$HOME/repos/ChessOptimizationPython/Openings/Balsa_Special.pgn"
 defaultEngine="Default|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=default"
 
 # set up Nuitka
-#$HOME/.pyenv/versions/3.10.4/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka
+$HOME/.pyenv/versions/3.10.4/bin/python -m nuitka ./default/main.py --follow-imports --output-dir=./nuitka
 
 # setup Cython
 cd Cpp_cython || exit
@@ -27,10 +27,10 @@ cp build/lib.linux-x86_64-3.10/*.so ./
 cd ..
 
 engines=(
-  #"3.12|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.12"
-  #"Nuitka|$HOME/repos/ChessOptimizationPython/nuitka/main.bin|--name=nuitka"
-  #"Pypy|$HOME/repos/pypy3.11-v7.3.19-linux64/bin/pypy|$HOME/repos/ChessOptimizationPython/default/main.py|--name=pypy"
-  #"Numba|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
+  "3.12|$HOME/.pyenv/versions/3.12.8/bin/python|$HOME/repos/ChessOptimizationPython/default/main.py|--name=python3.12"
+  "Nuitka|$HOME/repos/ChessOptimizationPython/nuitka/main.bin|--name=nuitka"
+  "Pypy|$HOME/repos/pypy3.11-v7.3.19-linux64/bin/pypy|$HOME/repos/ChessOptimizationPython/default/main.py|--name=pypy"
+  "Numba|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/numbaEngine/main.py|--name=numba"
   "Cpp|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/Cpp_cython/main.py|--name=cpp"
   "Cython|$HOME/.pyenv/versions/3.10.4/bin/python|$HOME/repos/ChessOptimizationPython/miniCython/main.py|--name=cython"
 )
@@ -58,15 +58,17 @@ for ((i=0; i<${#engines[@]}; i++)); do
   # Build the command
   cmd=(
     ~/repos/cutechess/build/cutechess-cli
-    -variant 5check
+    -variant 3check
     $(build_engine_args "$defaultEngine")
     $(build_engine_args "$engine_spec")
     -each tc="$TIME_CONTROL"
     -concurrency "$CONCURRENCY"
     -games "$GAMES_PER_MATCH"
+    -draw movenumber=100 movecount=15 score=50
+    -maxmoves 100
+    -resign movecount=8 score=600
     -repeat -recover
     -ratinginterval 2
-    -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05
     -openings file="$OPENINGS_FILE"
   )
 
