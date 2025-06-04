@@ -2,6 +2,8 @@
 
 This project explores performance optimization techniques in Python using a custom-built chess engine as a benchmarking tool. The goal is to evaluate how far Python-based applications can be pushed using various modern optimization tools, including Cython, Numba, Nuitka, and even a full C++ rewrite wrapped with Cython.
 
+See [the techincal report](https://github.com/FrederikHennecke/ChessOptimizationPython/blob/main/report.pdf) for more information about the project.
+
 ---
 
 ## 📁 Repository Structure
